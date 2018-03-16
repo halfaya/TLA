@@ -13,7 +13,14 @@ open import Relation.Binary.Core                  using (Decidable)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; sym; trans; cong; cong₂)
 open import Relation.Nullary                      using (yes; no; ¬_)
 
-open import ListSet
+--------------
+-- insert into a list if not already in the list
+
+insertNoDup : {A : Set} → Decidable {A = A} _≡_ → A → List A → List A
+insertNoDup e a [] = a ∷ []
+insertNoDup e a (b ∷ l) with e a b
+insertNoDup e a l@(b ∷ _) | yes p = l
+insertNoDup e a (b ∷ l)   | no ¬p = b ∷ (insertNoDup e a l)
 
 --------------
 
@@ -53,7 +60,7 @@ _J₂≟_ : Decidable {A = Jug × Jug} _≡_
 ... | no ¬p | _     = no  (¬p ∘ ,-injectiveˡ)
 
 JugPairSet : Set
-JugPairSet = ListSet (Jug × Jug)
+JugPairSet = List (Jug × Jug)
 
 --------------
 -- steps
@@ -161,10 +168,10 @@ stepsPreserveCapacity = fill₁PreservesCapacity  ∷ fill₂PreservesCapacity  
 
 -- returns the set that results after applying every step in steps to every jug pair in jugpairs
 apply : List Step → JugPairSet → JugPairSet
-apply steps (listSet jugpairs e) =
-  foldl (λ acc jugpair → foldl (λ acc' jugpair' → insert jugpair' acc')
+apply steps jugpairs =
+  foldl (λ acc jugpair → foldl (λ acc' jugpair' → insertNoDup _J₂≟_ jugpair' acc')
                                acc (map (λ step → step jugpair) steps))
-        (listSet [] e) jugpairs
+        [] jugpairs
 
 -- repeatedly apply n times function f to a base value
 repeat : ∀ {ℓ} {A : Set ℓ} → ℕ → (A → A) → A → A
@@ -183,20 +190,20 @@ jug₂ = jug 0 3
 
 -- The smallest number of steps needed is 6.
 solution : JugPairSet
-solution = repeat 6 (apply steps) (listSet ((jug₁ , jug₂) ∷ []) _J₂≟_)
-{- solution = listSet
-((jug 5 0 , jug 0 3) ∷
- (jug 5 0 , jug 3 0) ∷
- (jug 2 3 , jug 3 0) ∷
- (jug 0 5 , jug 0 3) ∷
- (jug 0 5 , jug 3 0) ∷
- (jug 2 3 , jug 0 3) ∷
- (jug 3 2 , jug 0 3) ∷
- (jug 0 5 , jug 2 1) ∷
- (jug 3 2 , jug 3 0) ∷
- (jug 5 0 , jug 2 1) ∷
- (jug 5 0 , jug 1 2) ∷
- (jug 4 1 , jug 3 0) ∷
- (jug 0 5 , jug 1 2) ∷
- (jug 1 4 , jug 0 3) ∷ [])
-_J₂≟_ -}
+solution = repeat 6 (apply steps) ((jug₁ , jug₂) ∷ [])
+{- solution =
+(jug 5 0 , jug 0 3) ∷
+(jug 5 0 , jug 3 0) ∷
+(jug 0 5 , jug 0 3) ∷
+(jug 2 3 , jug 3 0) ∷
+(jug 0 5 , jug 3 0) ∷
+(jug 2 3 , jug 0 3) ∷
+(jug 3 2 , jug 0 3) ∷
+(jug 0 5 , jug 2 1) ∷
+(jug 3 2 , jug 3 0) ∷
+(jug 5 0 , jug 2 1) ∷
+(jug 5 0 , jug 1 2) ∷
+(jug 4 1 , jug 3 0) ∷
+(jug 0 5 , jug 1 2) ∷
+(jug 1 4 , jug 0 3) ∷ []
+-}
